@@ -10,7 +10,10 @@ Plugin 'scrooloose/nerdtree'
 Plugin 'tpope/vim-fugitive'
 Plugin 'git://git.wincent.com/command-t.git'
 Plugin 'bling/vim-airline'
-Plugin 'vadimr/bclose.vim'
+Plugin 'igagen/bclose.vim'
+Plugin 'tpope/vim-surround'
+Plugin 'tpope/vim-repeat'
+Plugin 'Shougo/neocomplete.vim'
 
 Plugin 'kchmck/vim-coffee-script'
 Plugin 'digitaltoad/vim-jade'
@@ -18,6 +21,8 @@ Plugin 'wavded/vim-stylus'
 Plugin 'tpope/vim-haml'
 Plugin 'vim-ruby/vim-ruby'
 Plugin 'fatih/vim-go'
+Plugin 'tpope/vim-rails'
+Plugin 'slim-template/vim-slim'
 
 Plugin 'altercation/vim-colors-solarized'
 Plugin 'chriskempson/base16-vim'
@@ -27,14 +32,24 @@ Plugin 'fmoralesc/vim-vitamins'
 Plugin '29decibel/codeschool-vim-theme'
 Plugin 'vim-scripts/xoria256.vim'
 Plugin 'fatih/molokai'
+Plugin 'sickill/vim-monokai'
 
 call vundle#end()
 
 " Settings
 
 syntax on
-set background=light
-colorscheme solarized
+"set omnifunc=syntaxcomplete
+
+let g:scheme = 'dark'
+if g:scheme == 'light'
+  set background=light
+  colorscheme solarized
+elseif g:scheme == 'dark'
+  colorscheme monokai
+endif
+
+set fillchars+=vert:\ 
 set t_Co=256                                  " 256 color mode
 set hidden                                    " hidden buffers
 set backspace=2                               " enable backspace past entered text in insert mode
@@ -47,20 +62,25 @@ set cursorline
 set showcmd
 set scrolloff=4                               " provide additional lines of context when jumping between search results
 set number                                    " line numbers
-highlight LineNr ctermfg=grey ctermbg=white
+highlight LineNr ctermfg=darkgrey ctermbg=bg
+highlight CursorLine cterm=NONE
 set linebreak
+set tabstop=2
 set softtabstop=2
 set shiftwidth=2
 set shiftround
 set expandtab
 set showmatch                                 " show matching paren/brace/etc
 set list                                      " show invisibles
+" set listchars=trail:·
 set listchars=tab:»\ ,trail:·
 set conceallevel=2 concealcursor=nv
 set timeoutlen=1000 ttimeoutlen=0             " switch modes instantly
+set wildignore+=dist,node_modules,client/lib,client/fonts,client/images
 filetype plugin indent on                     " use filteype specific indentation
 let g:airline#extensions#tabline#enabled = 1
 let g:CommandTCancelMap=['<ESC>','<C-c>']     " dismiss Command-T with Esc
+let g:neocomplete#enable_at_startup = 1
 
 " Mappings
 
@@ -97,14 +117,14 @@ map <C-L> <C-W><C-L>
 map <C-H> <C-W><C-H>
 
 " Navigate autocomplete options with j/k
-inoremap <expr> j ((pumvisible())?("\<C-n>"):("j"))
-inoremap <expr> k ((pumvisible())?("\<C-p>"):("k"))
+inoremap <expr> <C-j> ((pumvisible())?("\<C-n>"):("<C-j>"))
+inoremap <expr> <C-k> ((pumvisible())?("\<C-p>"):("<C-k>"))
 
 " Misc
 
 " let exclude = ['go']
 " autocmd BufWritePre * if index(exclude, &ft) < 0 | :%s/\s\+$//e   "strip trailing whitespace on save
-autocmd BufWritePre * :%s/\s\+$//e   "strip trailing whitespace on save
+" autocmd BufWritePre * :%s/\s\+$//e   "strip trailing whitespace on save
 
 " Change cursor shape between insert and normal mode in iTerm2.app
 if $TERM_PROGRAM =~ "iTerm"
@@ -112,3 +132,34 @@ if $TERM_PROGRAM =~ "iTerm"
   let &t_EI = "\<Esc>]50;CursorShape=0\x7" " Block in normal mode
 endif
 
+" Neocomplete
+
+if !exists('g:neocomplete#keyword_patterns')
+  let g:neocomplete#keyword_patterns = {}
+endif
+
+let g:neocomplete#keyword_patterns['default'] = '\h\w*'
+let g:acp_enableAtStartup = 0 " Disable AutoComplPop.
+let g:neocomplete#enable_at_startup = 1 " Use neocomplete.
+let g:neocomplete#enable_smart_case = 1 " Use smartcase.
+let g:neocomplete#sources#syntax#min_keyword_length = 3 " Set minimum syntax keyword length.
+let g:neocomplete#lock_buffer_name_pattern = '\*ku\*'
+let g:neocomplete#sources#dictionary#dictionaries = { 'default' : '', 'vimshell' : $HOME.'/.vimshell_hist', 'scheme' : $HOME.'/.gosh_completions' } " Define dictionary.
+
+inoremap <expr><C-g>     neocomplete#undo_completion()
+inoremap <expr><C-l>     neocomplete#complete_common_string()
+inoremap <expr><TAB>  pumvisible() ? "\<C-n>" : "\<TAB>"
+inoremap <expr><C-h> neocomplete#smart_close_popup()."\<C-h>"
+inoremap <expr><BS> neocomplete#smart_close_popup()."\<C-h>"
+inoremap <expr><C-y>  neocomplete#close_popup()
+inoremap <expr><C-e>  neocomplete#cancel_popup()
+inoremap <silent> <CR> <C-r>=<SID>my_cr_function()<CR>
+
+function! s:my_cr_function()
+  return neocomplete#close_popup() . "\<CR>"
+  return pumvisible() ? neocomplete#close_popup() : "\<CR>"
+endfunction
+
+if !exists('g:neocomplete#sources#omni#input_patterns')
+  let g:neocomplete#sources#omni#input_patterns = {}
+endif
